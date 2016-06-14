@@ -47,7 +47,7 @@ def busstop2id(busstop):
 
 	busstop		bus stop name or its part (but a query must yield a unique result)
 	"""
-	r = requests.get('http://imhd.sk/ba/vyhladavanie?hladaj='+query)
+	r = requests.get('http://imhd.sk/ba/vyhladavanie?hladaj='+busstop)
 
 	soup = BeautifulSoup(r.text, 'html.parser')
 	try:
