@@ -164,22 +164,28 @@ class Stop(object):
                               headers=self.headers)
 
         cookies = {'testCookie': '1'}
-        self.r = requests.get('http://imhd.sk/rt/sio2/',
-                              params={'EIO': '3',
-                                      'transport': 'polling',
-                                      't': str(int(time.time()*1000))},
-                              cookies=cookies,
-                              headers=self.headers)
+        while True:
+            self.r = requests.get('http://imhd.sk/rt/sio2/',
+                                  params={'EIO': '3',
+                                          'transport': 'polling',
+                                          't': str(int(time.time()*1000))},
+                                  cookies=cookies,
+                                  headers=self.headers)
 
-        cookies = {'testCookie': '1'}
-        self.r = requests.get('http://imhd.sk/rt/sio2/',
-                              params={'EIO': '3',
-                                      'transport': 'polling',
-                                      't': str(int(time.time()*1000))+'-0'},
-                              cookies=cookies,
-                              headers=self.headers)
+            cookies = {'testCookie': '1'}
+            self.r = requests.get('http://imhd.sk/rt/sio2/',
+                                  params={'EIO': '3',
+                                          'transport': 'polling',
+                                          't': str(int(time.time()*1000))+'-0'},
+                                  cookies=cookies,
+                                  headers=self.headers)
 
-        io = self.r.cookies['io']
+            io = self.r.cookies.get('io', None)
+            if io:
+                break
+            else:
+                time.sleep(2)
+                 
         logging.debug(self.r.cookies)
 
         cookies = {'testCookie': '1', 'io': io}
@@ -204,9 +210,9 @@ class Stop(object):
                                   'transport': 'polling',
                                   't': str(int(time.time()*1000))+'-2',
                                   'sid': io},
-                          headers=self.headers,
-                          data=reqdata,
-                          cookies=cookies)
+                           headers=self.headers,
+                           data=reqdata,
+                           cookies=cookies)
 
         self.ws = create_connection('ws://imhd.sk/rt/sio2/?EIO=3&transport=websocket&sid=' + io)
 
