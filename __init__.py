@@ -185,7 +185,7 @@ class Stop(object):
                 break
             else:
                 time.sleep(2)
-                 
+
         logging.debug(self.r.cookies)
 
         cookies = {'testCookie': '1', 'io': io}
@@ -274,7 +274,7 @@ class Stop(object):
 
         logging.debug(self.r.text)
 
-    def get_data(self, platform, conn, force_update=False):
+    def get_data(self, platform, conn, force_update=False, resolve_names=False):
         """
         platform   platform ref
         conn       bus number(s) you wish to get data for (multiple values
@@ -298,6 +298,11 @@ class Stop(object):
         for x in self._data[platform]:
             if x['linka'] in conn:
                 x['toffset'] = int(int(x['cas']) / 1000 - time.time())
+                if resolve_names:
+                    for key in x:
+                        if key in ('ciel', 'lastZ'):
+                            if x[key] != 0:
+                                x[key] = destid2destname(x[key])
                 result.append(x)
         return result
 
@@ -324,5 +329,7 @@ if __name__ == "__main__":
     busdata = Stop(busstopid, debug=False)
     while True:
         print('{0}'.format(datetime.now().strftime('%H:%M:%S')))
-        print(busdata.get_data(platform, bus, force_update=True))
+        print(busdata.get_data(platform, bus,
+                               force_update=True,
+                               resolve_names=True))
         time.sleep(120)
