@@ -142,6 +142,7 @@ class Stop(object):
         return self._urlbase + url
 
     def get_valid_platforms(self):
+        return
         r = requests.get(self._u('online-zastavkova-tabula?z=') +
                          self.busstopid,
                          params={'skin': '2', 'fullscreen': '1'}, headers=self.headers)
@@ -199,8 +200,9 @@ class Stop(object):
         self.headers['Origin'] = 'http://imhd.sk'
         self.headers['Content-type'] = 'text/plain;charset=UTF-8'
 
-        reqdata = '42["req",[{0},{1}]]'.format(self.busstopid,
-                                               self._valid_platforms)
+        reqdata = '42["req",[{0},["*"]]]'.format(self.busstopid,
+                                                 self._valid_platforms)
+
         reqdata = reqdata.replace(' ', '')
         reqdata = str(len(reqdata)) + ':' + reqdata
         logging.debug(reqdata)
@@ -230,8 +232,6 @@ class Stop(object):
 
         Nothing is returned by this method, use self.get_data.
         """
-        if platform not in self._valid_platforms:
-            raise ValueError('%s is not a valid platform id' % platform)
 
         if 'ws' not in dir(self):
             logging.debug('subscribing')
@@ -268,8 +268,8 @@ class Stop(object):
                 time.sleep(3)
                 continue
 
-            if table_data[1].get('nastupiste') == platform:
-                self._data[platform] = table_data[1].get('tab')
+            if '{0}.{1}'.format(self.busstopid, platform) in table_data[1]:
+                self._data[platform] = table_data[1].get('{0}.{1}'.format(self.busstopid, platform))
                 response_timer = time.time()
 
         logging.debug(self.r.text)
@@ -285,8 +285,6 @@ class Stop(object):
         a list of dictionaries is returned
         """
         result = []
-        if platform not in self._data.keys():
-            self.fetch(platform)
         if not isinstance(conn, list):
             conn = [str(conn)]
         else:
@@ -295,12 +293,12 @@ class Stop(object):
         if force_update:
             self.fetch(platform)
 
-        for x in self._data[platform]:
+        for x in self._data[platform]['tab']:
             if x['linka'] in conn:
                 x['toffset'] = int(int(x['cas']) / 1000 - time.time())
                 if resolve_names:
                     for key in x:
-                        if key in ('ciel', 'lastZ'):
+                        if key in ('cielZastavka', 'lastZ'):
                             if x[key] != 0:
                                 x[key] = destid2destname(x[key])
                 result.append(x)
@@ -324,6 +322,7 @@ if __name__ == "__main__":
     print('bus stop id: {0} ({1})'.format(busstopid, query))
     print('platform id: {0}'.format(platform))
     print('bus: {0}'.format(bus))
+    print('refresh: 120 seconds')
     print(35 * '-')
 
     busdata = Stop(busstopid, debug=False)
